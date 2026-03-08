@@ -54,7 +54,12 @@ function draw() {
   fill(0);
   textSize(64);
   textFont('monospace');
-  text(`${floor(targetAngle)}°`, width / 2, height / 2 - 100);
+  let angleDisplay = floor(targetAngle);
+  if (angleDisplay === 0) {
+    text(`OFF`, width / 2, height / 2 - 100);
+  } else {
+    text(`${angleDisplay}°`, width / 2, height / 2 - 100);
+  }
   
   // 4. Status
   textSize(12);

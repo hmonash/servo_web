@@ -13,12 +13,18 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     int angle = Serial.parseInt();
-    // Flush any remaining characters in the buffer
     while (Serial.available() > 0) {
       Serial.read();
     }
     
-    if (angle >= 0 && angle <= 180) {
+    if (angle == 0) {
+      if (myServo.attached()) {
+        myServo.detach();
+      }
+    } else if (angle > 0 && angle <= 180) {
+      if (!myServo.attached()) {
+        myServo.attach(servoPin);
+      }
       myServo.write(angle);
     }
   }
