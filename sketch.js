@@ -98,7 +98,9 @@ async function sendToSerial(val) {
   try {
     const encoder = new TextEncoder();
     const writer = port.writable.getWriter();
-    await writer.write(val + "\n"); // Simplified to just the string
+    const data = encoder.encode(val + "\n");
+    console.log("Sending:", val);
+    await writer.write(data);
     writer.releaseLock();
   } catch (err) {
     console.error("Send failed:", err);
