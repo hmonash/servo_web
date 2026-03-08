@@ -4,44 +4,49 @@
 Servo myServo;
 const int servoPin = 9;
 
+unsigned long lastMoveTime = 0;
+const int moveDelay = 600; // Time in ms to allow servo to reach position
+int targetAngle = 0;
+
 void setup() {
   pinMode(servoPin, OUTPUT);
-  digitalWrite(servoPin, LOW); // Hold signal low to prevent jitter
+  digitalWrite(servoPin, LOW); 
   Serial.begin(9600);
-  Serial.setTimeout(10); // Faster timeout for more responsive control
+  Serial.setTimeout(10);
 }
 
-int currentAngle = -1; // Start at -1 to force first update
-
 void loop() {
+  // 1. Check for Serial Data
   if (Serial.available() > 0) {
-    // Check if the next character is actually a number
     if (isDigit(Serial.peek())) {
-      int angle = Serial.parseInt();
+      int newAngle = Serial.parseInt();
       
-      // Flush any trailing newline/carriage return
       while (Serial.available() > 0 && !isDigit(Serial.peek())) {
         Serial.read();
       }
       
-      if (angle == 0) {
-        if (myServo.attached()) {
-          myServo.detach();
-          digitalWrite(servoPin, LOW); // Ensure pin is low when detached
-          currentAngle = 0;
-        }
-      } else if (angle > 0 && angle <= 180) {
-        if (abs(angle - currentAngle) >= 1) {
-          if (!myServo.attached()) {
-            myServo.attach(servoPin);
-          }
-          myServo.write(angle);
-          currentAngle = angle;
+      if (newAngle >= 0 && newAngle <= 180) {
+        targetAngle = newAngle;
+        
+        if (targetAngle == 0) {
+          if (myServo.attached()) myServo.detach();
+          digitalWrite(servoPin, LOW);
+        } else {
+          if (!myServo.attached()) myServo.attach(servoPin);
+          myServo.write(targetAngle);
+          lastMoveTime = millis(); // Reset timer
         }
       }
     } else {
-      // Clear non-numeric garbage
       Serial.read();
+    }
+  }
+
+  // 2. Auto-detach after movement to stop jitter
+  if (myServo.attached() && targetAngle > 0) {
+    if (millis() - lastMoveTime > moveDelay) {
+      myServo.detach();
+      digitalWrite(servoPin, LOW); // Hold signal quiet
     }
   }
 }
