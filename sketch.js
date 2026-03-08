@@ -1,7 +1,7 @@
 let port;
 let connectBtn;
-let targetAngle = 90;
-let lastSentAngle = 90;
+let targetAngle = 0;
+let lastSentAngle = 0;
 let lastSentTime = 0;
 
 function setup() {
