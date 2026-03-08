@@ -1,5 +1,5 @@
 let port;
-let connectBtn, disconnectBtn;
+let connectBtn, disconnectBtn, forgetBtn;
 let targetAngle = 0;
 let displayedAngle = 0;
 
@@ -11,9 +11,21 @@ function setup() {
   
   disconnectBtn = select('#disconnectBtn');
   disconnectBtn.mousePressed(disconnectSerial);
+
+  forgetBtn = select('#forgetBtn');
+  forgetBtn.mousePressed(forgetAllPorts);
   
   textAlign(CENTER, CENTER);
   rectMode(CENTER);
+}
+
+async function forgetAllPorts() {
+  const ports = await navigator.serial.getPorts();
+  for (const p of ports) {
+    await p.forget();
+  }
+  alert("All paired ports forgotten. Please re-connect.");
+  location.reload();
 }
 
 async function connectToSerial() {
