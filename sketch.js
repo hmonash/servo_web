@@ -56,14 +56,14 @@ async function disconnectSerial() {
 }
 
 function mouseReleased() {
-  // Only allow sending if connected and at least 2 seconds passed since connection
+  // 1. Only allow sending if connected and at least 2 seconds passed since connection
   if (port && port.writable && targetAngle > 0) {
     if (millis() - connectionTime > 2000) {
       sendToSerial(targetAngle);
     } else {
       console.log("Waiting for connection to stabilize...");
     }
-    targetAngle = 0;
+    // REMOVED targetAngle = 0; // Keep the angle after release
   }
 }
 
