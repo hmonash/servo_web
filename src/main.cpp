@@ -3,10 +3,7 @@
 
 Servo myServo;
 const int servoPin = 9;
-unsigned long lastMoveTime = 0;
-const int moveDelay = 800; // Increased to ensure completion
-int currentTarget = -1;
-bool isMoving = false;
+const int moveDelay = 800; // Time allowed for the physical move
 
 void setup() {
   pinMode(servoPin, OUTPUT);
@@ -15,41 +12,29 @@ void setup() {
 }
 
 void loop() {
-  // 1. Better Serial Parser: Collect digits until newline
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n');
     input.trim();
     
     if (input.length() > 0) {
-      int newAngle = input.toInt();
+      int targetAngle = input.toInt();
       
-      if (newAngle >= 0 && newAngle <= 180) {
-        currentTarget = newAngle;
+      if (targetAngle > 0 && targetAngle <= 180) {
+        // 1. Attach and Move
+        myServo.attach(servoPin);
+        myServo.write(targetAngle);
         
-        if (currentTarget == 0) {
-          myServo.detach();
-          digitalWrite(servoPin, LOW);
-          isMoving = false;
-          // Serial.println("DEBUG: Detached (OFF)");
-        } else {
-          if (!myServo.attached()) {
-            myServo.attach(servoPin);
-          }
-          myServo.write(currentTarget);
-          lastMoveTime = millis();
-          isMoving = true;
-          // Serial.print("DEBUG: Moving to ");
-          // Serial.println(currentTarget);
-        }
+        // 2. Wait for completion
+        delay(moveDelay); 
+        
+        // 3. Detach immediately to stop all jitter/hum
+        myServo.detach();
+        digitalWrite(servoPin, LOW);
+      } else if (targetAngle == 0) {
+        myServo.detach();
+        digitalWrite(servoPin, LOW);
       }
     }
   }
-
-  // 2. Stop and detach once the move is complete
-  if (isMoving && (millis() - lastMoveTime > moveDelay)) {
-    myServo.detach();
-    digitalWrite(servoPin, LOW); // Hold the signal low
-    isMoving = false;
-    // Serial.println("DEBUG: Motion finished, detached.");
-  }
 }
+
