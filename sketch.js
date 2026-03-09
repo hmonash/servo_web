@@ -36,8 +36,29 @@ async function connectToSerial() {
     connectBtn.html("Connected");
     connectBtn.style('background-color', '#eee');
     disconnectBtn.style('display', 'inline-block');
+    
+    // Start listening for incoming data
+    readSerial(); 
   } catch (err) {
     console.error("Error connecting to serial:", err);
+  }
+}
+
+async function readSerial() {
+  while (port && port.readable) {
+    const reader = port.readable.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const decoded = new TextDecoder().decode(value);
+        console.log("Arduino says:", decoded);
+      }
+    } catch (err) {
+      console.error("Read failed:", err);
+    } finally {
+      reader.releaseLock();
+    }
   }
 }
 
@@ -57,13 +78,12 @@ async function disconnectSerial() {
 
 function mouseReleased() {
   // 1. Only allow sending if connected and at least 2 seconds passed since connection
-  if (port && port.writable && targetAngle > 0) {
+  if (port && port.writable) {
     if (millis() - connectionTime > 2000) {
       sendToSerial(targetAngle);
     } else {
       console.log("Waiting for connection to stabilize...");
     }
-    // REMOVED targetAngle = 0; // Keep the angle after release
   }
 }
 
@@ -92,7 +112,7 @@ function draw() {
   textSize(64);
   textFont('monospace');
   if (targetAngle === 0) {
-    text(`OFF`, width / 2, height / 2 - 100);
+    text(`START`, width / 2, height / 2 - 100);
   } else {
     text(`${targetAngle}°`, width / 2, height / 2 - 100);
   }
@@ -108,6 +128,7 @@ function draw() {
 
 async function sendToSerial(val) {
   if (!port || !port.writable) return;
+  console.log("Sending angle:", val);
   try {
     const encoder = new TextEncoder();
     const writer = port.writable.getWriter();

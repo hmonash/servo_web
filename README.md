@@ -39,7 +39,7 @@ Then visit `http://localhost:8000`.
 
 1. Click the **"Connect to Arduino"** button in the browser.
 2. Select your Arduino Uno's serial port.
-3. Move your mouse horizontally across the canvas to rotate the servo (0° to 180°).
+3. Move your mouse horizontally across the canvas to rotate the servo (0° to 360°).
 
 ## Project Structure
 

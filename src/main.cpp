@@ -2,54 +2,54 @@
 #include <Servo.h>
 
 Servo myServo;
-const int servoPin = 9;
-const int moveDelay = 800; 
+const int SERVO_PIN = 9;
+int currentAngle = 0; // Keep track of where we are
 
 void setup() {
-  // 1. Force signal line to LOW immediately
-  pinMode(servoPin, OUTPUT);
-  digitalWrite(servoPin, LOW); 
-  
   Serial.begin(9600);
-  Serial.setTimeout(20); // Short timeout for faster parsing
+  Serial.setTimeout(5);
   
-  // 2. Clear any garbage data that came in during power-on
-  while(Serial.available() > 0) Serial.read();
+  // Start at 0
+  myServo.attach(SERVO_PIN);
+  myServo.write(0);
+  delay(500);
+  myServo.detach();
+  digitalWrite(SERVO_PIN, LOW);
+  
+  Serial.println("READY: Proportional Jitter-Free Controller");
 }
 
 void loop() {
-  // 3. Ignore all Serial data for the first 2 seconds after reset
-  // This prevents random noise during port opening from triggering a move.
-  if (millis() < 2000) {
-    if (Serial.available() > 0) Serial.read();
-    return;
-  }
-
   if (Serial.available() > 0) {
-    // Only proceed if the first character is a digit
-    if (isDigit(Serial.peek())) {
-      int targetAngle = Serial.parseInt();
-      
-      // Consume any remaining characters in the buffer (newlines, etc)
-      while (Serial.available() > 0 && !isDigit(Serial.peek())) {
-        Serial.read();
-      }
+    int targetAngle = Serial.parseInt();
+    targetAngle = constrain(targetAngle, 0, 180);
+    
+    // Calculate distance to move
+    int angleDiff = abs(targetAngle - currentAngle);
+    
+    // Calculate dynamic delay: 150ms base + 2.5ms per degree of travel
+    // This ensures we hold just long enough to get there.
+    int dynamicDelay = 150 + (angleDiff * 2.5);
 
-      if (targetAngle > 0 && targetAngle <= 180) {
-        // 4. Set the angle BEFORE attaching. 
-        // This prevents the servo from jumping to 90 degrees before reaching your target.
-        myServo.write(targetAngle);
-        myServo.attach(servoPin);
-        
-        delay(moveDelay); 
-        
-        // 5. Detach and kill signal immediately
-        myServo.detach();
-        digitalWrite(servoPin, LOW);
-      }
-    } else {
-      // Discard non-numeric noise
-      Serial.read();
-    }
+    Serial.print("MOVING: ");
+    Serial.print(currentAngle);
+    Serial.print(" -> ");
+    Serial.print(targetAngle);
+    Serial.print(" (Delay: ");
+    Serial.print(dynamicDelay);
+    Serial.println("ms)");
+
+    myServo.attach(SERVO_PIN);
+    myServo.write(targetAngle);
+    
+    delay(dynamicDelay);
+    
+    myServo.detach();
+    digitalWrite(SERVO_PIN, LOW);
+    
+    currentAngle = targetAngle; // Update our tracker
+    Serial.println("DONE");
+
+    while (Serial.available() > 0) Serial.read();
   }
 }
